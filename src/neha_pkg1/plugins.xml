@@ -1,0 +1,5 @@
+<library path="lib/libneha1">
+  <class name="neha_pkg1/neha1" type="neha_pkg1::neha1" base_class_type="nodelet::Nodelet">
+    <description>neha1 nodelet</description>
+  </class>
+</library>

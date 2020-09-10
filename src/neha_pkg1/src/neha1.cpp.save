@@ -1,0 +1,30 @@
+#include <ros/ros.h>
+#include <ros/package.h>
+#include <nodelet/nodelet.h>
+//#include <dynamic_reconfigure/server.h>
+#include <fstream>
+#include <iostream>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PointStamped.h>
+#include <nav_msgs/Odometry.h>
+#include <mrs_msgs/TrackerPoint.h>
+#include <mrs_msgs/Vec4.h>
+#include <mrs_msgs/MpcTrackerDiagnostics.h>
+#include <mrs_msgs/Float64Stamped.h>
+#include <mrs_msgs/ReferenceStamped.h>
+#include <mrs_lib/ParamLoader.h>
+//	#include <mrs_lib/transformer.h>
+ int main{
+	ros::NodeHandle node;
+	ros::ServiceClient client=node.serviceClient<mrs_msgs::vec4>("uav1/control_manager/goto");
+	/home/eha/mrs_workspace/devel/include/mrs_msgs::vec4 srv;
+	srv.request.goal[0] = 0.0;
+	srv.request.goal[1] = 10.0;
+	srv.request.goal[2] = 5.0;
+	srv.request.goal[3] = 0.0;
+	if (client.call(srv))
+	{
+		printf("i did it");
+	}
+	ros::spin()
+}
