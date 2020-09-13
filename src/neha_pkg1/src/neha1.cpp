@@ -121,7 +121,7 @@ ROS_INFO_ONCE("m here in init");
 	}
 
 
-
+//see this thing works mostly it should as while ros::ok() works with subsrciber & timer if it does not add that if code inside void neha1::callbackTimerPublishDistToWaypoint() 
 //activate fun this is fun to form a traingle of uav
 void neha1::activate(void)
 {
