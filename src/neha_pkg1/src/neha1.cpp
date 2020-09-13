@@ -125,6 +125,7 @@ ROS_INFO_ONCE("m here in init");
 //activate fun this is fun to form a traingle of uav
 void neha1::activate(void)
 {
+	while(ros::ok()){
 	int x=0,y=0,i=0,j=0,N=3;
 	float z=3,yaw=3.14;
 	int n = (sqrt(8*N+1)-1)/2;
@@ -158,7 +159,15 @@ void neha1::activate(void)
 		path_set=true;
 		ROS_INFO("path has been set");
 
-	
+	if(other_drones_diagnostics["uav1"]&&other_drones_diagnostics["uav2"]&&other_drones_diagnostics["uav3"])
+	{
+		new_waypoints[0].reference.position.y = new_waypoints[0].reference.position.y+15;
+		new_waypoints[1].reference.position.y = new_waypoints[1].reference.position.y+15;
+		new_waypoints[2].reference.position.y = new_waypoints[2].reference.position.y+15;
+	}
+		ros::spin();
+}
+  }
   
 }
 int l=0;
