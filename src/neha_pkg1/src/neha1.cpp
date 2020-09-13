@@ -26,6 +26,7 @@
 #include <map> 
 #include <iterator> 
 #include <std_msgs/String.h> 
+//get the reading from lidar subscribe to it & write callback function
 namespace neha_pkg1
 {
 
