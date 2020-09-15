@@ -196,7 +196,7 @@ void neha1::callbackTimerPublishDistToWaypoint(const ros::TimerEvent& te)
 void neha1::callbackOtheruavcoordinates(const mrs_msgs::RtkGpsConstPtr msg, const std::string& topic){
   int uav_no = *(topic.c_str()+3); 
   //std::string uav_name="uav"+uav_name-1;
-  std::string uav_name="uav";
+  std::string uav_name="uav"+uav_no;
   other_drones_location[uav_name]=*msg;
 }
 
