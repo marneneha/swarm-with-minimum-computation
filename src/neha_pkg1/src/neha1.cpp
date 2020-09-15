@@ -38,6 +38,7 @@ namespace neha_pkg1
   	void callbackOdomGt(const nav_msgs::OdometryConstPtr& msg);
 	void callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
 	void callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic);
+	void callbackLidar(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic);
 
 	void collisionavoidance(std::string uav_name);
   	void activate(void);
@@ -49,6 +50,7 @@ namespace neha_pkg1
 
 	std::vector<ros::Subscriber>                            other_uav_coordinates;
   	std::vector<ros::Subscriber>                            sub_uav_diag;
+  	std::vector<ros::Subscriber>                            sub_uav_lidar;
   	std::vector<std::string>                                other_drone_names_;
   	std::map<std::string, mrs_msgs::RtkGps> 		other_drones_location;
 	std::map<std::string, int>				other_drones_neighbour;
@@ -100,6 +102,11 @@ namespace neha_pkg1
 	sub_uav_diag.push_back(nh.subscribe <mrs_msgs::ControlManagerDiagnostics> (diag_topic_name, 10, boost::bind(&neha1::callbackTrackerDiag, this, _1, diag_topic_name)));
 	ROS_INFO("[neha1]: subscribing to %s", diag_topic_name.c_str());				
 
+	std::string lidar_topic_name = std::string("/") + other_drone_names_[i] + std::string("/") + "laser"+std::string("/")+"scan";
+	//correct the msg type here
+	sub_uav_lidar.push_back(nh.subscribe <mrs_msgs::ControlManagerDiagnostics> (lidar_topic_name, 10, boost::bind(&neha1::callbackLidar, this, _1, lidar_topic_name)));
+	ROS_INFO("[neha1]: subscribing to %s", lidar_topic_name.c_str());
+		
 	std::string neha_uav = "/"+other_drone_names_[i]+"/control_manager/reference";
 	pub_reference_.push_back(nh.advertise<mrs_msgs::ReferenceStamped>(neha_uav,1));
 	ROS_INFO("[neha1]:publishing to %s",neha_uav.c_str());
@@ -187,6 +194,16 @@ void neha1::callbackTimerPublishDistToWaypoint(const ros::TimerEvent& te)
 
 
 //goto function
+void neha1::callbackLidar(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic){
+  ROS_INFO_ONCE("m here in callbackTrackerDiag");
+  int uav_no = *(topic.c_str()+3); 
+  std::string uav_name="uav"+uav_no;	
+  other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
+	
+ if (msg->ranges[0]<5 || msg->ranges[15]<5 || msg->ranges[345]<5){ # Checks if there are obstacles in front and   
+	
+	 }
+}
 
 //clear
 //or mrs_msgs::RtkGps::ConstPtr&
