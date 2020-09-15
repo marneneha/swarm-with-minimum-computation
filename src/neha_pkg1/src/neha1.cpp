@@ -201,7 +201,8 @@ void neha1::callbackLidar(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg,
   other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
 	
  if (msg->ranges[0]<5 || msg->ranges[15]<5 || msg->ranges[345]<5){ # Checks if there are obstacles in front and   
-	
+	//turn pi
+	 
 	 }
 }
 
