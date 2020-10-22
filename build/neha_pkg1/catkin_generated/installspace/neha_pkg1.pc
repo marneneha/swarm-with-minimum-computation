@@ -1,8 +1,0 @@
-prefix=/home/neha/neha1/install
-
-Name: neha_pkg1
-Description: Description of neha_pkg1
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib -lneha1
-Requires: roscpp mrs_lib mrs_msgs std_msgs geometry_msgs nav_msgs message_runtime
