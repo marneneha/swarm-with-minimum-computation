@@ -58,6 +58,7 @@ namespace neha_pkg1
 	std::map<std::string, int>				other_drones_preneighbour;
   	std::map<std::string, bool>  				other_drones_diagnostics;
 	std::map<int, geometry_msgs::Point>			current_position;
+	std::map<int, geometry_msgs::Quaternion>		current_orintation;
 	std::string 						rtk_gps;
 	std::string 						global;
 	std::string						control_manager;
@@ -73,6 +74,8 @@ namespace neha_pkg1
 	ros::Timer 						timer_neighbour_;
 	std::vector<mrs_msgs::ReferenceStamped>			new_waypoints;
 	bool path_set=false;
+	bool obstacle;
+	bool coherence;
   };
 }
 
@@ -199,7 +202,7 @@ void neha1::callbackTimerPublishDistToWaypoint(const ros::TimerEvent& te)
 		{
 		l=0;
 		}
-	if(other_drones_diagnostics["uav1"]&&other_drones_diagnostics["uav2"]&&other_drones_diagnostics["uav3"])
+	if(other_drones_diagnostics["uav1"]&&other_drones_diagnostics["uav2"]&&other_drones_diagnostics["uav3"] && !obstacle && coherence)
 	{
 		new_waypoints[0].reference.position.y = new_waypoints[0].reference.position.y+15;
 		new_waypoints[1].reference.position.y = new_waypoints[1].reference.position.y+15;
@@ -222,6 +225,86 @@ void neha1::callbackOtheruavcoordinates(const mrs_msgs::RtkGpsConstPtr msg, cons
   std::string uav_name="uav";
   other_drones_location[uav_name]=*msg;
 }
+
+
+void neha1::neighbourtimer(const ros::TimerEvent& te){
+coherence = true;
+for(int i=0; i<2;i++){
+	for(int j=i+1; j<=2;j++){
+	float dist1 = dist3d(current_position[i].x,current_position[i].y,current_position[i].z,current_position[j].x,current_position[j].y,current_position[j].z);
+	if (dist1>5 || dist1<2){
+		//move reverse 
+		coherence = false;
+		new_waypoints[i].reference.position.x = current_position[i].x-cos(current_orintation[i].z);		  
+		new_waypoints[i].reference.position.y = current_position[i].y-sin(current_orintation[i].z);		  
+		new_waypoints[j].reference.position.x = current_position[j].x-cos(current_orintation[i].z);		  
+		new_waypoints[j].reference.position.y = current_position[j].y-sin(current_orintation[i].z);		  
+
+		}
+	}
+  }
+}
+
+
+
+
+void neha1::callbackLidar(const sensor_msgs::LaserScanConstPtr msg, const std::string& topic){
+  ROS_INFO_ONCE("m here in callback lidar");
+  int uav_no = *(topic.c_str()+4);
+  uav_no = uav_no-49;
+  obstacle = false;
+	for(int i=0; i<=355; i++){
+		if (msg->ranges[i]<5){ 
+		obstacle = true;
+		new_waypoints[uav_no].reference.position.x = current_position[uav_no].x+cos(90+i);		  
+		new_waypoints[uav_no].reference.position.y = current_position[uav_no].y+sin(90+i);		  
+
+		}
+	}
+	 
+}
+
+//unnecesarry function
+void neha1::callbackGroundTruth(const nav_msgs::OdometryConstPtr msg,const std::string& topic){
+int uav_no = *(topic.c_str()+4);
+uav_no = uav_no-49;
+current_position[uav_no] = msg->pose.pose.position;
+current_orintation[uav_no] = msg->pose.pose.orientation;
+}
+
+
+
+void neha1::callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic){
+  ROS_INFO_ONCE("m here in callbackTrackerDiag");
+  int uav_no = *(topic.c_str()+4);
+  uav_no = uav_no-48;
+  std::string uav_name="uav"+std::to_string(uav_no);	
+  other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
+  if (!msg->tracker_status.have_goal){
+  std::cout << __FILE__ << ":" << __LINE__ << uav_name << "with number" << uav_no <<"waypoint reached "  <<std::endl; 
+    
+
+  }
+}
+
+
+double dist3d(const double ax, const double ay, const double az, const double bx, const double by, const double bz) {
+
+  return sqrt(pow(ax - bx, 2) + pow(ay - by, 2) + pow(az - bz, 2));
+}
+
+
+/*void neha1::callbackOdomGt(const nav_msgs::OdometryConstPtr& msg){
+  ROS_INFO_ONCE("m here in callbackOdomGt");
+  odom_gt_ = *msg;		
+}
+
+
+void neha1::callbackOdomUav(const nav_msgs::OdometryConstPtr& msg){
+  ROS_INFO_ONCE("m here in callbackOdomUav");
+  odom_uav_ = *msg;		
+  }
+*/
 
 /*
 //more time lag
@@ -270,73 +353,5 @@ std::map<std::string,mrs_msgs::RtkGps>::iterator v = other_drones_location.begin
 }*/
 
 
-void neha1::neighbourtimer(const ros::TimerEvent& te){
-for(int i=0; i<2;i++){
-	for(int j=i+1; j<=2;j++){
-	float dist1 = dist3d(current_position[i].x,current_position[i].y,current_position[i].z,current_position[j].x,current_position[j].y,current_position[j].z);
-	if (dist1>5 || dist1<2){
-		//move reverse 
-		
-		
-		}
-	}
-  }
-}
-
-
-
-
-void neha1::callbackLidar(const sensor_msgs::LaserScanConstPtr msg, const std::string& topic){
-  ROS_INFO_ONCE("m here in callback lidar");
-  int uav_no = *(topic.c_str()+4);
-  uav_no = uav_no-49;
-	for(int i=0; i<=355; i++){
-		if (msg->ranges[i]<5){ 
-		new_waypoints[uav_no].reference.position.x = current_position[uav_no].x+cos(90+i);		  
-		new_waypoints[uav_no].reference.position.y = current_position[uav_no].y+sin(90+i);		  
-
-		}
-	}
-	 
-}
-
-//unnecesarry function
-void neha1::callbackGroundTruth(const nav_msgs::OdometryConstPtr msg,const std::string& topic){
-int uav_no = *(topic.c_str()+4);
-uav_no = uav_no-49;
-current_position[uav_no] = msg->pose.pose.position;
-}
-
-
-
-void neha1::callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic){
-  ROS_INFO_ONCE("m here in callbackTrackerDiag");
-  int uav_no = *(topic.c_str()+4);
-  uav_no = uav_no-48;
-  std::string uav_name="uav"+std::to_string(uav_no);	
-  other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
-  if (!msg->tracker_status.have_goal){
-  std::cout << __FILE__ << ":" << __LINE__ << uav_name << "with number" << uav_no <<"waypoint reached "  <<std::endl; 
-    
-
-  }
-}
-
-
-/*void neha1::callbackOdomGt(const nav_msgs::OdometryConstPtr& msg){
-  ROS_INFO_ONCE("m here in callbackOdomGt");
-  odom_gt_ = *msg;		
-}
-
-
-void neha1::callbackOdomUav(const nav_msgs::OdometryConstPtr& msg){
-  ROS_INFO_ONCE("m here in callbackOdomUav");
-  odom_uav_ = *msg;		
-  }
-*/
-double dist3d(const double ax, const double ay, const double az, const double bx, const double by, const double bz) {
-
-  return sqrt(pow(ax - bx, 2) + pow(ay - by, 2) + pow(az - bz, 2));
-}
 }
 PLUGINLIB_EXPORT_CLASS(neha_pkg1::neha1, nodelet::Nodelet);
