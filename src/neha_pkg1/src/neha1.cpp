@@ -18,6 +18,7 @@
 #include <mrs_msgs/Float64Stamped.h>
 #include <mrs_msgs/ReferenceStamped.h>
 #include <mrs_msgs/RtkGps.h>
+#include <sensor_msgs/LaserScan.h>
 #include <mrs_lib/param_loader.h>
 #include <pluginlib/class_list_macros.h>
 #include <std_srvs/Trigger.h>
@@ -34,10 +35,11 @@ namespace neha_pkg1
   public:
 	virtual void onInit();
 
-  	void callbackOdomGt(const nav_msgs::OdometryConstPtr& msg);
-	void callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
+  	//void callbackOdomGt(const nav_msgs::OdometryConstPtr& msg);
+	//void callbackOdomUav(const nav_msgs::OdometryConstPtr& msg);
 	void callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic);
-
+	void callbackLidar(const sensor_msgs::LaserScanConstPtr msg, const std::string& topic);
+	void callbackGroundTruth(const nav_msgs::OdometryConstPtr msg,const std::string& topic);
 	void collisionavoidance(std::string uav_name);
   	void activate(void);
 	void neha_goto(float x,float y, std::string uav_name);
@@ -48,11 +50,14 @@ namespace neha_pkg1
 
 	std::vector<ros::Subscriber>                            other_uav_coordinates;
   	std::vector<ros::Subscriber>                            sub_uav_diag;
+	std::vector<ros::Subscriber>                            sub_uav_lidar;
+	std::vector<ros::Subscriber>                            sub_gt;
   	std::vector<std::string>                                other_drone_names_;
   	std::map<std::string, mrs_msgs::RtkGps> 		other_drones_location;
 	std::map<std::string, int>				other_drones_neighbour;
 	std::map<std::string, int>				other_drones_preneighbour;
   	std::map<std::string, bool>  				other_drones_diagnostics;
+	std::map<int, geometry_msgs::Point>			current_position;
 	std::string 						rtk_gps;
 	std::string 						global;
 	std::string						control_manager;
@@ -98,10 +103,20 @@ namespace neha_pkg1
 	std::string diag_topic_name = std::string("/") + other_drone_names_[i] + std::string("/") + "control_manager"+std::string("/")+"diagnostics";    
 	sub_uav_diag.push_back(nh.subscribe <mrs_msgs::ControlManagerDiagnostics> (diag_topic_name, 20, boost::bind(&neha1::callbackTrackerDiag, this, _1, diag_topic_name)));
 	ROS_INFO("[neha1]: subscribing to %s", diag_topic_name.c_str());				
+	
+	std::string lidar_topic_name = std::string("/") + other_drone_names_[i] + std::string("/") + "rplidar"+std::string("/")+"scan";
+	//correct the msg type here
+	sub_uav_lidar.push_back(nh.subscribe <sensor_msgs::LaserScan> (lidar_topic_name, 10, boost::bind(&neha1::callbackLidar, this, _1, lidar_topic_name)));
+	ROS_INFO("[neha1]: subscribing to %s", lidar_topic_name.c_str());
+
+	std::string gt_topic_name = std::string("/") + other_drone_names_[i] + std::string("/") + "odometry" + std::string("/") + "odom_main";
+	sub_gt.push_back(nh.subscribe <nav_msgs::Odometry> (gt_topic_name, 10, boost::bind(&neha1::callbackGroundTruth, this, _1, gt_topic_name)));
+	ROS_INFO("[neha1]:publishing to %s",gt_topic_name.c_str());
 
 	std::string neha_uav = "/"+other_drone_names_[i]+"/control_manager/reference";
 	pub_reference_.push_back(nh.advertise<mrs_msgs::ReferenceStamped>(neha_uav,1));
 	ROS_INFO("[neha1]:publishing to %s",neha_uav.c_str());
+
 	}
 //------------subsriber---------------
 	//ros::Subscriber sub_odom_gt_=nh.subscribe("odom_gt_in",1,&neha1::callbackOdomGt,this,ros::TransportHints().tcpNoDelay());
@@ -257,8 +272,41 @@ std::map<std::string,mrs_msgs::RtkGps>::iterator v = other_drones_location.begin
 
 
 
+void neha1::callbackLidar(const sensor_msgs::LaserScanConstPtr msg, const std::string& topic){
+  ROS_INFO_ONCE("m here in callback lidar");
+  int uav_no = *(topic.c_str()+4);
+  uav_no = uav_no-49;
+	for(int i=0; i<=355; i++){
+		if (msg->ranges[i]<5){ 
+		new_waypoints[uav_no].reference.position.x = current_position[uav_no].x+cos(90+i);		  
+		new_waypoints[uav_no].reference.position.y = current_position[uav_no].y+sin(90+i);		  
+
+		}
+	}
+	 
+}
 
 //unnecesarry function
+void neha1::callbackGroundTruth(const nav_msgs::OdometryConstPtr msg,const std::string& topic){
+int uav_no = *(topic.c_str()+4);
+uav_no = uav_no-49;
+current_position[uav_no] = msg->pose.pose.position;
+}
+
+
+
+void neha1::callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic){
+  ROS_INFO_ONCE("m here in callbackTrackerDiag");
+  int uav_no = *(topic.c_str()+4);
+  uav_no = uav_no-48;
+  std::string uav_name="uav"+std::to_string(uav_no);	
+  other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
+  if (!msg->tracker_status.have_goal){
+  std::cout << __FILE__ << ":" << __LINE__ << uav_name << "with number" << uav_no <<"waypoint reached "  <<std::endl; 
+    
+
+  }
+}
 
 
 /*void neha1::callbackOdomGt(const nav_msgs::OdometryConstPtr& msg){
@@ -272,25 +320,6 @@ void neha1::callbackOdomUav(const nav_msgs::OdometryConstPtr& msg){
   odom_uav_ = *msg;		
   }
 */
-
-void neha1::callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPtr msg, const std::string& topic){
-  ROS_INFO_ONCE("m here in callbackTrackerDiag");
-  int uav_no = *(topic.c_str()+4);
-  uav_no = uav_no-48;
-  std::cout << __FILE__ << ":" << __LINE__ <<uav_no<<std::endl; 
-  std::cout << __FILE__ << ":" << __LINE__ <<topic.c_str()<<std::endl;
-  //printf("%s",topic.c_str()); 
-  std::string uav_name="uav"+std::to_string(uav_no);	
-  //std::cout << __FILE__ << ":" << __LINE__ <<uav_name<<std::endl;
-  //printf("%s", uav_name.c_str());  
-  other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
-  if (!msg->tracker_status.have_goal){
-  std::cout << __FILE__ << ":" << __LINE__ << uav_name << "with number" << uav_no <<"waypoint reached "  <<std::endl; 
-    
-
-  }
-}
-
 double dist3d(const double ax, const double ay, const double az, const double bx, const double by, const double bz) {
 
   return sqrt(pow(ax - bx, 2) + pow(ay - by, 2) + pow(az - bz, 2));
