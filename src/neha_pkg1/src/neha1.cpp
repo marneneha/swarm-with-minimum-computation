@@ -45,7 +45,7 @@ namespace neha_pkg1
 	void neha_goto(float x,float y, std::string uav_name);
 	void callbackOtheruavcoordinates(const mrs_msgs::RtkGpsConstPtr msg, const std::string& topic);
 	double dist3d(const double ax, const double ay, const double az, const double bx, const double by, const double bz);
-	int neighbourtimer(void);
+	void neighbourtimer(const ros::TimerEvent& te);
 	void callbackTimerPublishDistToWaypoint(const ros::TimerEvent& te);
 
 	std::vector<ros::Subscriber>                            other_uav_coordinates;
@@ -70,6 +70,7 @@ namespace neha_pkg1
 	bool _simulation_;
 	std::vector<ros::Publisher>				pub_reference_;
 	ros::Timer 						timer_publish_dist_to_waypoint_;
+	ros::Timer 						timer_neighbour_;
 	std::vector<mrs_msgs::ReferenceStamped>			new_waypoints;
 	bool path_set=false;
   };
@@ -126,6 +127,7 @@ namespace neha_pkg1
 //---------------------timer------------------
 
 timer_publish_dist_to_waypoint_ = nh.createTimer(ros::Rate(10), &neha1::callbackTimerPublishDistToWaypoint, this);
+timer_neighbour_ = nh.createTimer(ros::Rate(10), &neha1::neighbourtimer, this);
 //------------------------publisher--------------
 
 	
@@ -221,7 +223,7 @@ void neha1::callbackOtheruavcoordinates(const mrs_msgs::RtkGpsConstPtr msg, cons
   other_drones_location[uav_name]=*msg;
 }
 
-
+/*
 //more time lag
 //check no. of neighbour
 int neha1::neighbourtimer(void){
@@ -241,9 +243,6 @@ int neha1::neighbourtimer(void){
     u++;
   }
 }
-
-
-
 //less time lag
 //coliision avoidance
 void neha1::collisionavoidance(std::string uav_name){
@@ -268,7 +267,22 @@ std::map<std::string,mrs_msgs::RtkGps>::iterator v = other_drones_location.begin
   other_drones_preneighbour[uav_name]=u->second;
   u++;
   }
+}*/
+
+
+void neha1::neighbourtimer(const ros::TimerEvent& te){
+for(int i=0; i<2;i++){
+	for(int j=i+1; j<=2;j++){
+	float dist1 = dist3d(current_position[i].x,current_position[i].y,current_position[i].z,current_position[j].x,current_position[j].y,current_position[j].z);
+	if (dist1>5 || dist1<2){
+		//move reverse 
+		
+		
+		}
+	}
+  }
 }
+
 
 
 
