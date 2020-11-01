@@ -234,6 +234,7 @@ for(int i=0; i<2;i++){
 	float dist1 = dist3d(current_position[i].x,current_position[i].y,current_position[i].z,current_position[j].x,current_position[j].y,current_position[j].z);
 	if (dist1>5 || dist1<2){
 		//move reverse 
+		ROS_INFO("COHERENCE ESTABALISHED AGAIN");
 		coherence = false;
 		new_waypoints[i].reference.position.x = current_position[i].x-cos(current_orintation[i].z);		  
 		new_waypoints[i].reference.position.y = current_position[i].y-sin(current_orintation[i].z);		  
@@ -249,16 +250,16 @@ for(int i=0; i<2;i++){
 
 
 void neha1::callbackLidar(const sensor_msgs::LaserScanConstPtr msg, const std::string& topic){
-  ROS_INFO_ONCE("m here in callback lidar");
+  ROS_INFO("m here in callback lidar");
   int uav_no = *(topic.c_str()+4);
   uav_no = uav_no-49;
   obstacle = false;
 	for(int i=0; i<=355; i++){
-		if (msg->ranges[i]<5){ 
+		if (msg->ranges[i]<10){ 
 		obstacle = true;
 		new_waypoints[uav_no].reference.position.x = current_position[uav_no].x+cos(90+i);		  
 		new_waypoints[uav_no].reference.position.y = current_position[uav_no].y+sin(90+i);		  
-
+  		ROS_INFO("lidar DETECTED and doing avoidance");
 		}
 	}
 	 
@@ -281,7 +282,7 @@ void neha1::callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPt
   std::string uav_name="uav"+std::to_string(uav_no);	
   other_drones_diagnostics[uav_name] = msg->tracker_status.have_goal;  
   if (!msg->tracker_status.have_goal){
-  std::cout << __FILE__ << ":" << __LINE__ << uav_name << "with number" << uav_no <<"waypoint reached "  <<std::endl; 
+  //std::cout << __FILE__ << ":" << __LINE__ << uav_name << "with number" << uav_no <<"waypoint reached "  <<std::endl; 
     
 
   }

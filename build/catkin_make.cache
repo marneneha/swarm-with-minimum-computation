@@ -1,2 +1,2 @@
 neha_pkg1
--DCMAKE_BUILD_TYPE=Debug -DCATKIN_DEVEL_PREFIX=/home/neha/neha1/devel -DCMAKE_INSTALL_PREFIX=/home/neha/neha1/install -G Unix Makefiles
+-DCATKIN_DEVEL_PREFIX=/home/neha/neha1/devel -DCMAKE_INSTALL_PREFIX=/home/neha/neha1/install -G Unix Makefiles
