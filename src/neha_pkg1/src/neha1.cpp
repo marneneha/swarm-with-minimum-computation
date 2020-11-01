@@ -288,7 +288,7 @@ void neha1::callbackTrackerDiag(const mrs_msgs::ControlManagerDiagnosticsConstPt
 }
 
 
-double dist3d(const double ax, const double ay, const double az, const double bx, const double by, const double bz) {
+double neha1::dist3d(const double ax, const double ay, const double az, const double bx, const double by, const double bz) {
 
   return sqrt(pow(ax - bx, 2) + pow(ay - by, 2) + pow(az - bz, 2));
 }

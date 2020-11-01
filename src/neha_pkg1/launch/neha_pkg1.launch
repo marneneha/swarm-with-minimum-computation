@@ -24,8 +24,8 @@
   <group ns="$(arg UAV_NAME)">
 
     <!-- neha1 nodelet -->
-    <node pkg="nodelet" type="nodelet" name="neha_pkg1" args="$(arg nodelet) neha_pkg1/neha1 $(arg nodelet_manager)"  output="screen">
-// $(arg launch_prefix_debug)  gdb -ex run --args
+    <node pkg="nodelet" type="nodelet" name="neha_pkg1" args="$(arg nodelet) neha_pkg1/neha1 $(arg nodelet_manager)" launch-prefix="gdb -ex run --args"  output="screen">
+// 
       <!-- Parameters loaded from launch file -->
       <param name="uav_name" type="string" value="$(arg UAV_NAME)" />
       <param name="simulation" value="$(eval arg('RUN_TYPE') == 'simulation')" />
